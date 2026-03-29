@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="robots" content="noindex, nofollow">
+    <title>OEC - Brief TF1</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        html { font-size: 16px; scroll-behavior: smooth; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #FAF8F3; color: #1E3550; line-height: 1.6; overflow-x: hidden; }
+
+        /* ─── PASSWORD GATE ─── */
+        #gate { position: fixed; inset: 0; z-index: 9999; background: linear-gradient(160deg, #1E3550 0%, #2a4a6b 100%); display: flex; align-items: center; justify-content: center; padding: 24px; }
+        #gate.hidden { display: none; }
+        .gate-card { background: rgba(255,255,255,0.06); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 40px 28px; width: 100%; max-width: 380px; text-align: center; }
+        .gate-card .logo { font-size: 2rem; font-weight: 800; color: #C0AC5C; letter-spacing: -1px; margin-bottom: 6px; }
+        .gate-card .sub { color: rgba(255,255,255,0.5); font-size: 0.8rem; margin-bottom: 32px; text-transform: uppercase; letter-spacing: 2px; }
+        .gate-input { width: 100%; padding: 16px 20px; border: 2px solid rgba(255,255,255,0.15); border-radius: 12px; background: rgba(255,255,255,0.08); color: #FAF8F3; font-size: 1rem; font-family: inherit; outline: none; transition: border-color 0.3s; }
+        .gate-input::placeholder { color: rgba(255,255,255,0.3); }
+        .gate-input:focus { border-color: #C0AC5C; }
+        .gate-btn { width: 100%; margin-top: 16px; padding: 16px; border: none; border-radius: 12px; background: #C0AC5C; color: #1E3550; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+        .gate-btn:active { transform: scale(0.97); background: #a89545; }
+        .gate-error { color: #C08070; font-size: 0.85rem; margin-top: 12px; min-height: 20px; }
+
+        /* ─── MAIN APP ─── */
+        #app { display: none; }
+        #app.visible { display: block; }
+
+        /* Header sticky */
+        .top-bar { position: sticky; top: 0; z-index: 100; background: rgba(30,53,80,0.97); backdrop-filter: blur(12px); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; }
+        .top-bar .brand { font-weight: 700; color: #C0AC5C; font-size: 1rem; }
+        .top-bar .tag { background: rgba(192,172,92,0.15); color: #C0AC5C; padding: 4px 10px; border-radius: 8px; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.5px; }
+
+        /* Hero section */
+        .hero { background: linear-gradient(160deg, #1E3550 0%, #2a4a6b 100%); padding: 32px 20px 28px; }
+        .hero h1 { color: #FAF8F3; font-size: 1.5rem; font-weight: 800; line-height: 1.2; letter-spacing: -0.5px; }
+        .hero .accent { color: #C0AC5C; }
+        .hero .details { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px; }
+        .hero .pill { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); padding: 6px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 500; }
+
+        /* Section nav (tabs) */
+        .section-nav { position: sticky; top: 48px; z-index: 90; background: #FAF8F3; border-bottom: 1px solid #e8e4d9; padding: 0 16px; overflow-x: auto; -webkit-overflow-scrolling: touch; display: flex; gap: 0; white-space: nowrap; scrollbar-width: none; }
+        .section-nav::-webkit-scrollbar { display: none; }
+        .nav-tab { padding: 14px 18px; font-size: 0.82rem; font-weight: 600; color: #8498B0; border: none; background: none; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s; flex-shrink: 0; }
+        .nav-tab.active { color: #1E3550; border-bottom-color: #C0AC5C; }
+
+        /* Content areas */
+        .section { display: none; padding: 20px; padding-bottom: 100px; }
+        .section.active { display: block; animation: slideUp 0.3s ease; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Cards talking points */
+        .tp-card { background: #fff; border-radius: 14px; margin-bottom: 14px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04); border: 1px solid #eee; transition: box-shadow 0.2s; }
+        .tp-card:active { box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+        .tp-header { padding: 18px 20px; display: flex; align-items: center; gap: 14px; cursor: pointer; -webkit-user-select: none; user-select: none; }
+        .tp-num { width: 36px; height: 36px; border-radius: 10px; background: #1E3550; color: #C0AC5C; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; flex-shrink: 0; }
+        .tp-title { font-weight: 700; font-size: 0.95rem; color: #1E3550; flex: 1; }
+        .tp-chevron { font-size: 1.2rem; color: #8498B0; transition: transform 0.3s; flex-shrink: 0; }
+        .tp-chevron.open { transform: rotate(180deg); }
+        .tp-body { max-height: 0; overflow: hidden; transition: max-height 0.35s ease; }
+        .tp-body.open { max-height: 600px; }
+        .tp-body-inner { padding: 0 20px 20px; }
+        .say-box { background: #e8f5ec; border-left: 4px solid #7BA88F; border-radius: 0 10px 10px 0; padding: 14px 16px; margin-bottom: 10px; font-size: 0.9rem; color: #1a4a2e; line-height: 1.55; font-style: italic; }
+        .dont-box { background: #fef2f2; border-left: 4px solid #C08070; border-radius: 0 10px 10px 0; padding: 14px 16px; font-size: 0.85rem; color: #7a2020; line-height: 1.5; }
+        .dont-box strong { color: #842029; }
+
+        /* Memo section */
+        .memo-title { font-size: 1.15rem; font-weight: 800; color: #1E3550; margin-bottom: 16px; }
+
+        .context-banner { background: linear-gradient(135deg, #e8f5ec 0%, #d1e7dd 100%); border-radius: 14px; padding: 20px; margin-bottom: 20px; }
+        .context-banner p { font-size: 0.9rem; color: #1a4a2e; }
+        .context-banner strong { color: #0f5132; }
+
+        /* Question delicate */
+        .delicate { background: linear-gradient(135deg, #fff8e6 0%, #fff3cd 100%); border: 2px solid #D4C080; border-radius: 14px; padding: 20px; margin-bottom: 20px; }
+        .delicate h3 { font-size: 0.95rem; color: #664d03; margin-bottom: 14px; font-weight: 700; }
+        .step { display: flex; gap: 12px; margin-bottom: 14px; align-items: flex-start; }
+        .step:last-child { margin-bottom: 0; }
+        .step-num { width: 28px; height: 28px; border-radius: 50%; background: #1E3550; color: #C0AC5C; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.75rem; flex-shrink: 0; margin-top: 2px; }
+        .step-text { font-size: 0.88rem; color: #3a4a5a; line-height: 1.5; }
+        .step-text strong { color: #1E3550; }
+
+        /* Red lines */
+        .redline { background: #fff; border-radius: 12px; padding: 16px 18px; margin-bottom: 10px; border: 1px solid #f0e0e0; display: flex; gap: 12px; align-items: flex-start; }
+        .redline-icon { width: 24px; height: 24px; border-radius: 6px; background: #f8d7da; color: #842029; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; flex-shrink: 0; margin-top: 2px; }
+        .redline-content { flex: 1; }
+        .redline-subject { font-weight: 700; font-size: 0.88rem; color: #842029; }
+        .redline-reply { font-size: 0.82rem; color: #666; margin-top: 4px; font-style: italic; }
+
+        /* Rebond phrases */
+        .rebond { background: #fff; border-radius: 12px; padding: 16px 18px; margin-bottom: 10px; border-left: 4px solid #6B89A8; font-size: 0.9rem; color: #2a4a6b; font-style: italic; line-height: 1.5; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
+
+        /* Pratique */
+        .info-row { display: flex; padding: 14px 0; border-bottom: 1px solid #f0ede4; }
+        .info-label { width: 100px; font-weight: 700; font-size: 0.82rem; color: #8498B0; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0; }
+        .info-value { flex: 1; font-size: 0.92rem; color: #1E3550; font-weight: 500; }
+
+        /* Bottom banner */
+        .bottom-banner { background: #1E3550; padding: 20px; text-align: center; margin-top: 20px; border-radius: 14px; }
+        .bottom-banner p { color: #C0AC5C; font-size: 0.72rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; line-height: 1.8; }
+
+        /* Section title */
+        .sec-title { font-size: 0.72rem; font-weight: 700; color: #8498B0; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; }
+
+        /* Responsive > 768px */
+        @media (min-width: 768px) {
+            .section { max-width: 640px; margin: 0 auto; }
+            .hero { text-align: center; }
+            .hero .details { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- PASSWORD GATE -->
+<div id="gate">
+    <div class="gate-card">
+        <div class="logo">Or en Cash</div>
+        <div class="sub">Brief confidentiel</div>
+        <form onsubmit="return checkPwd()">
+            <input type="password" id="pwd" class="gate-input" placeholder="Mot de passe" autocomplete="off" autofocus>
+            <button type="submit" class="gate-btn">Acceder</button>
+        </form>
+        <div class="gate-error" id="gate-error"></div>
+    </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+    <div class="top-bar">
+        <span class="brand">Or en Cash</span>
+        <span class="tag">CONFIDENTIEL</span>
+    </div>
+
+    <div class="hero">
+        <h1>Brief Tournage <span class="accent">TF1</span></h1>
+        <div class="details">
+            <span class="pill">Lundi 31 mars - 14h</span>
+            <span class="pill">Agence Bellecour</span>
+            <span class="pill">LCB-FT</span>
+        </div>
+    </div>
+
+    <nav class="section-nav" id="nav">
+        <button class="nav-tab active" data-tab="talking">Talking Points</button>
+        <button class="nav-tab" data-tab="memo">Memo</button>
+        <button class="nav-tab" data-tab="redlines">Lignes rouges</button>
+        <button class="nav-tab" data-tab="rebond">Rebond</button>
+        <button class="nav-tab" data-tab="pratique">Pratique</button>
+    </nav>
+
+    <!-- ═══ TALKING POINTS ═══ -->
+    <div class="section active" id="talking">
+        <div class="sec-title">Les 8 messages cles</div>
+
+        <div class="tp-card">
+            <div class="tp-header" onclick="toggle(this)">
+                <div class="tp-num">1</div>
+                <div class="tp-title">Professionnel assujetti</div>
+                <div class="tp-chevron">&#9662;</div>
+            </div>
+            <div class="tp-body">
+                <div class="tp-body-inner">
+                    <div class="say-box">"En tant que negociant en metaux precieux, nous sommes soumis a des obligations strictes de lutte contre le blanchiment et le financement du terrorisme. C'est le Code monetaire et financier qui nous l'impose, et c'est la Direction des Douanes qui nous controle."</div>
+                    <div class="dont-box"><strong>Ne pas dire :</strong> frequence des controles, resultats, PV, sanctions.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tp-card">
+            <div class="tp-header" onclick="toggle(this)">
+                <div class="tp-num">2</div>
+                <div class="tp-title">Identification systematique</div>
+                <div class="tp-chevron">&#9662;</div>
+            </div>
+            <div class="tp-body">
+                <div class="tp-body-inner">
+                    <div class="say-box">"Chaque personne qui vient vendre de l'or est identifiee. C'est une obligation legale, mais c'est aussi une question de confiance et de serieux. On ne rachete pas de l'or a quelqu'un sans savoir a qui on a affaire."</div>
+                    <div class="dont-box"><strong>Ne pas dire :</strong> logiciel utilise, bases de donnees, seuils internes de vigilance renforcee.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tp-card">
+            <div class="tp-header" onclick="toggle(this)">
+                <div class="tp-num">3</div>
+                <div class="tp-title">Tracabilite totale</div>
+                <div class="tp-chevron">&#9662;</div>
+            </div>
+            <div class="tp-body">
+                <div class="tp-body-inner">
+                    <div class="say-box">"Chaque operation fait l'objet d'un ecrit. On conserve les documents pendant 5 ans, comme l'exige la loi. Tout est trace, tout est documente."</div>
+                    <div class="dont-box"><strong>Ne pas dire :</strong> nom du logiciel (Licorne/Odin), format des fichiers, circuit interne.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tp-card">
+            <div class="tp-header" onclick="toggle(this)">
+                <div class="tp-num">4</div>
+                <div class="tp-title">Zero especes</div>
+                <div class="tp-chevron">&#9662;</div>
+            </div>
+            <div class="tp-body">
+                <div class="tp-body-inner">
+                    <div class="say-box">"Chez Or en Cash, nous ne payons que par cheque ou virement bancaire. Pas d'especes. Chaque euro verse est trace, identifie, et rattache a un beneficiaire. C'est la meilleure garantie de transparence."</div>
+                    <div class="dont-box"><strong>Ne pas dire :</strong> raisons internes de ce choix, montants moyens, delais, exceptions.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tp-card">
+            <div class="tp-header" onclick="toggle(this)">
+                <div class="tp-num">5</div>
+                <div class="tp-title">Declaration Tracfin</div>
+                <div class="tp-chevron">&#9662;</div>
+            </div>
+            <div class="tp-body">
+                <div class="tp-body-inner">
+                    <div class="say-box">"Si une operation nous semble suspecte, nous avons l'obligation de la signaler a Tracfin. Il n'y a pas de seuil minimum - des qu'un doute existe, on declare."</div>
+                    <div class="dont-box"><strong>Ne pas dire :</strong> nombre de DS faites, cas concrets, profils suspects.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tp-card">
+            <div class="tp-header" onclick="toggle(this)">
+                <div class="tp-num">6</div>
+                <div class="tp-title">Formation des equipes</div>
+                <div class="tp-chevron">&#9662;</div>
+            </div>
+            <div class="tp-body">
+                <div class="tp-body-inner">
+                    <div class="say-box">"Nos collaborateurs sont formes a ces obligations. La lutte contre le blanchiment, ce n'est pas juste une case a cocher, c'est au coeur de notre metier de confiance."</div>
+                    <div class="dont-box"><strong>Ne pas dire :</strong> prestataire de formation, frequence exacte, scores, lacunes.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tp-card">
+            <div class="tp-header" onclick="toggle(this)">
+                <div class="tp-num">7</div>
+                <div class="tp-title">112 agences, un standard</div>
+                <div class="tp-chevron">&#9662;</div>
+            </div>
+            <div class="tp-body">
+                <div class="tp-body-inner">
+                    <div class="say-box">"Avec plus de 110 agences en France, on applique les memes regles partout. C'est la force d'un reseau structure : chaque agence respecte les memes obligations, avec le meme niveau d'exigence."</div>
+                    <div class="dont-box"><strong>Ne pas dire :</strong> differences entre agences, problemes de conformite, modele juridique.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tp-card">
+            <div class="tp-header" onclick="toggle(this)">
+                <div class="tp-num">8</div>
+                <div class="tp-title">Au-dela de la loi</div>
+                <div class="tp-chevron">&#9662;</div>
+            </div>
+            <div class="tp-body">
+                <div class="tp-body-inner">
+                    <div class="say-box">"On va plus loin que ce que la reglementation impose : photos des objets, documentation renforcee, paiement 100% bancaire. C'est notre engagement de transparence."</div>
+                    <div class="dont-box"><strong>Ne pas dire :</strong> details techniques de la documentation interne.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ MEMO ═══ -->
+    <div class="section" id="memo">
+        <div class="sec-title">Memo preparation</div>
+
+        <div class="context-banner">
+            <p><strong>TF1 tourne un sujet sur les obligations LCB-FT dans le negoce d'or.</strong> Journaliste : Ignacio Bornassin. L'agence Bellecour a ete choisie. Justine represente la Direction du Reseau. Angle positif : on montre qu'on est serieux, transparent, conforme.</p>
+        </div>
+
+        <div class="delicate">
+            <h3>Question delicate : les objets voles</h3>
+
+            <div class="step">
+                <div class="step-num">1</div>
+                <div class="step-text"><strong>Cadrer.</strong> "Nous ne sommes ni la police, ni des enqueteurs. Mais ca ne veut pas dire qu'on se decharge de notre responsabilite."</div>
+            </div>
+            <div class="step">
+                <div class="step-num">2</div>
+                <div class="step-text"><strong>Tracabilite.</strong> "On met en place une tracabilite rigoureuse, plus stricte que la reglementation. Photos des objets, identification complete, documentation detaillee."</div>
+            </div>
+            <div class="step">
+                <div class="step-num">3</div>
+                <div class="step-text"><strong>A disposition.</strong> "Tout est tenu a jour et a disposition des autorites competentes - police, douanes, Tracfin."</div>
+            </div>
+            <div class="step">
+                <div class="step-num">4</div>
+                <div class="step-text"><strong>Confidentialite.</strong> "Pour des raisons de confidentialite, on ne peut pas ouvrir ces donnees a n'importe qui qui se presenterait. C'est du bon sens."</div>
+            </div>
+            <div class="step">
+                <div class="step-num">5</div>
+                <div class="step-text"><strong>Rebond.</strong> "Notre role, c'est de faire notre travail avec rigueur, et de cooperer pleinement avec les autorites quand elles nous sollicitent."</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ LIGNES ROUGES ═══ -->
+    <div class="section" id="redlines">
+        <div class="sec-title">9 sujets interdits</div>
+
+        <div class="redline">
+            <div class="redline-icon">1</div>
+            <div class="redline-content">
+                <div class="redline-subject">Process internes / logiciels</div>
+                <div class="redline-reply">"Nos procedures internes sont confidentielles."</div>
+            </div>
+        </div>
+        <div class="redline">
+            <div class="redline-icon">2</div>
+            <div class="redline-content">
+                <div class="redline-subject">Resultats de controles / PV</div>
+                <div class="redline-reply">"Je ne suis pas la bonne personne, contactez notre direction."</div>
+            </div>
+        </div>
+        <div class="redline">
+            <div class="redline-icon">3</div>
+            <div class="redline-content">
+                <div class="redline-subject">Securite / braquages / coffres</div>
+                <div class="redline-reply">"Vous comprendrez que je ne puisse pas detailler nos dispositifs de securite."</div>
+            </div>
+        </div>
+        <div class="redline">
+            <div class="redline-icon">4</div>
+            <div class="redline-content">
+                <div class="redline-subject">Chiffres d'affaires / volumes</div>
+                <div class="redline-reply">"Ces donnees sont confidentielles."</div>
+            </div>
+        </div>
+        <div class="redline">
+            <div class="redline-icon">5</div>
+            <div class="redline-content">
+                <div class="redline-subject">Cas concrets de fraude</div>
+                <div class="redline-reply">"La loi nous interdit de reveler nos declarations de soupcon."</div>
+            </div>
+        </div>
+        <div class="redline">
+            <div class="redline-icon">6</div>
+            <div class="redline-content">
+                <div class="redline-subject">Nombre de declarations Tracfin</div>
+                <div class="redline-reply">"C'est couvert par le secret de la declaration."</div>
+            </div>
+        </div>
+        <div class="redline">
+            <div class="redline-icon">7</div>
+            <div class="redline-content">
+                <div class="redline-subject">Pratiques des concurrents</div>
+                <div class="redline-reply">Ne pas commenter. Rester sur OEC et la loi.</div>
+            </div>
+        </div>
+        <div class="redline">
+            <div class="redline-icon">8</div>
+            <div class="redline-content">
+                <div class="redline-subject">Previsions cours / geopolitique</div>
+                <div class="redline-reply">"Le cours fluctue, notre role est d'accompagner nos clients."</div>
+            </div>
+        </div>
+        <div class="redline">
+            <div class="redline-icon">9</div>
+            <div class="redline-content">
+                <div class="redline-subject">Modele juridique interne</div>
+                <div class="redline-reply">"Nous sommes un reseau integre de plus de 110 agences."</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ REBOND ═══ -->
+    <div class="section" id="rebond">
+        <div class="sec-title">Phrases de rebond</div>
+        <p style="font-size:0.85rem; color:#8498B0; margin-bottom:16px;">Si une question vous met en difficulte, utilisez l'une de ces formulations :</p>
+
+        <div class="rebond">"C'est un sujet sensible, je vous invite a contacter directement Tracfin ou la Direction des Douanes."</div>
+        <div class="rebond">"Les details operationnels relevent de la confidentialite de nos procedures, vous le comprendrez."</div>
+        <div class="rebond">"Ce que je peux vous dire, c'est que la reglementation francaise est parmi les plus strictes d'Europe, et nous nous y conformons pleinement."</div>
+        <div class="rebond">"Notre priorite, c'est la confiance - celle de nos clients et celle des autorites."</div>
+
+        <div class="bottom-banner">
+            <p>Serieux &middot; Confiance &middot; Transparence<br>Confidentialite &middot; Formation &middot; Process identiques +110 agences</p>
+        </div>
+    </div>
+
+    <!-- ═══ PRATIQUE ═══ -->
+    <div class="section" id="pratique">
+        <div class="sec-title">Informations pratiques</div>
+
+        <div style="background:#fff; border-radius:14px; padding:4px 20px; border:1px solid #eee;">
+            <div class="info-row">
+                <div class="info-label">Date</div>
+                <div class="info-value">Lundi 31 mars 2026, 14h</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Lieu</div>
+                <div class="info-value">Agence Bellecour, Lyon</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Journaliste</div>
+                <div class="info-value">Ignacio Bornassin (TF1)</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Contact</div>
+                <div class="info-value">Claire-Louise Fiault<br><span style="color:#8498B0; font-size:0.85rem;">Mediatiser.tv - 06 75 66 92 81</span></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Duree</div>
+                <div class="info-value">~2-3h tournage, ~3 min au JT</div>
+            </div>
+            <div class="info-row" style="border-bottom:none;">
+                <div class="info-label">Tenue</div>
+                <div class="info-value">Professionnelle, sobre. Pas de logo concurrent.</div>
+            </div>
+        </div>
+
+        <div class="context-banner" style="margin-top:20px;">
+            <p><strong>Rappel :</strong> Le journaliste a deja ete cadre lors d'un call de preparation le 27/03. Justine a repondu de maniere tres structuree et rassurante. L'angle est confirme : conformite reglementaire, pas enquete.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+// Password check
+function checkPwd() {
+    var pwd = document.getElementById('pwd').value;
+    if (pwd === 'Justineisthebest69002') {
+        document.getElementById('gate').classList.add('hidden');
+        document.getElementById('app').classList.add('visible');
+        sessionStorage.setItem('auth', '1');
+    } else {
+        document.getElementById('gate-error').textContent = 'Mot de passe incorrect';
+        document.getElementById('pwd').value = '';
+        document.getElementById('pwd').focus();
+    }
+    return false;
+}
+// Auto-login if session
+if (sessionStorage.getItem('auth') === '1') {
+    document.getElementById('gate').classList.add('hidden');
+    document.getElementById('app').classList.add('visible');
+}
+
+// Tab navigation
+document.querySelectorAll('.nav-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+        document.querySelectorAll('.nav-tab').forEach(function(t) { t.classList.remove('active'); });
+        document.querySelectorAll('.section').forEach(function(s) { s.classList.remove('active'); });
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+    });
+});
+
+// Toggle talking points
+function toggle(header) {
+    var body = header.nextElementSibling;
+    var chevron = header.querySelector('.tp-chevron');
+    body.classList.toggle('open');
+    chevron.classList.toggle('open');
+}
+</script>
+</body>
+</html>
